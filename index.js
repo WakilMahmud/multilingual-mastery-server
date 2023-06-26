@@ -83,6 +83,17 @@ async function run() {
 		});
 
 		// classes apis
+		app.get("/classes", async (req, res) => {
+			const email = req.query.email;
+			console.log(email);
+
+			const query = { instructorEmail: email };
+
+			const desiredInstructorClasses = await classesCollection.find(query).toArray();
+
+			res.send(desiredInstructorClasses);
+		});
+
 		app.post("/classes", async (req, res) => {
 			const classInfo = req.body;
 			const result = await classesCollection.insertOne(classInfo);
