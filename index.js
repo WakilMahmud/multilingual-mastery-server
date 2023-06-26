@@ -27,7 +27,7 @@ async function run() {
 		//user apis
 		app.get("/users", async (req, res) => {
 			const queryEmail = req.query.email;
-			console.log(queryEmail);
+			// console.log(queryEmail);
 
 			if (queryEmail) {
 				const query = { email: queryEmail };
