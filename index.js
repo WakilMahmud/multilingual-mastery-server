@@ -23,6 +23,7 @@ const client = new MongoClient(uri, {
 async function run() {
 	try {
 		const usersCollection = client.db("multilingualMastery").collection("users");
+		const classesCollection = client.db("multilingualMastery").collection("classes");
 
 		//user apis
 		app.get("/users", async (req, res) => {
@@ -78,6 +79,13 @@ async function run() {
 			};
 
 			const result = await usersCollection.updateOne(filter, updateDoc);
+			res.send(result);
+		});
+
+		// classes apis
+		app.post("/classes", async (req, res) => {
+			const classInfo = req.body;
+			const result = await classesCollection.insertOne(classInfo);
 			res.send(result);
 		});
 
