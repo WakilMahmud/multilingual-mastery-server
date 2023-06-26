@@ -25,6 +25,20 @@ async function run() {
 		const usersCollection = client.db("multilingualMastery").collection("users");
 
 		//user apis
+		app.get("/users", async (req, res) => {
+			const queryEmail = req.query.email;
+			console.log(queryEmail);
+
+			if (queryEmail) {
+				const query = { email: queryEmail };
+				const desiredUser = await usersCollection.findOne(query);
+				return res.send(desiredUser);
+			}
+
+			const result = await usersCollection.find().toArray();
+			res.send(result);
+		});
+
 		app.post("/users", async (req, res) => {
 			const user = req.body;
 
