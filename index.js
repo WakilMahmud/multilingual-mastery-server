@@ -85,18 +85,38 @@ async function run() {
 		// classes apis
 		app.get("/classes", async (req, res) => {
 			const email = req.query.email;
-			console.log(email);
+			// console.log(email);
 
-			const query = { instructorEmail: email };
+			if (email) {
+				const query = { instructorEmail: email };
 
-			const desiredInstructorClasses = await classesCollection.find(query).toArray();
+				const desiredInstructorClasses = await classesCollection.find(query).toArray();
 
-			res.send(desiredInstructorClasses);
+				return res.send(desiredInstructorClasses);
+			}
+			const result = await classesCollection.find().toArray();
+			res.send(result);
 		});
 
 		app.post("/classes", async (req, res) => {
 			const classInfo = req.body;
 			const result = await classesCollection.insertOne(classInfo);
+			res.send(result);
+		});
+
+		app.patch("/classes/admin/:id", async (req, res) => {
+			const id = req.params.id;
+			const status = req.query.status;
+			// console.log(id);
+			// console.log(status);
+			const filter = { _id: new ObjectId(id) };
+			const updateDoc = {
+				$set: {
+					status: status,
+				},
+			};
+
+			const result = await classesCollection.updateOne(filter, updateDoc);
 			res.send(result);
 		});
 
