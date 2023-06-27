@@ -24,6 +24,7 @@ async function run() {
 	try {
 		const usersCollection = client.db("multilingualMastery").collection("users");
 		const classesCollection = client.db("multilingualMastery").collection("classes");
+		const registerClassesCollection = client.db("multilingualMastery").collection("registerClasses");
 
 		//user apis
 		app.get("/users", async (req, res) => {
@@ -129,6 +130,13 @@ async function run() {
 			};
 
 			const result = await classesCollection.updateOne(filter, updateDoc);
+			res.send(result);
+		});
+
+		//registerClasses
+		app.post("/register-classes", async (req, res) => {
+			const classInfo = req.body;
+			const result = await registerClassesCollection.insertOne(classInfo);
 			res.send(result);
 		});
 
