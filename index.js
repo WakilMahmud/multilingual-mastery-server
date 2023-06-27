@@ -104,6 +104,12 @@ async function run() {
 			res.send(result);
 		});
 
+		app.get("/approved-classes", async (req, res) => {
+			const query = { status: "approved" };
+			const result = await classesCollection.find(query).toArray();
+			res.send(result);
+		});
+
 		app.post("/classes", async (req, res) => {
 			const classInfo = req.body;
 			const result = await classesCollection.insertOne(classInfo);
