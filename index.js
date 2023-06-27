@@ -134,9 +134,22 @@ async function run() {
 		});
 
 		//registerClasses
+		app.get("/register-classes", async (req, res) => {
+			const query = { status: "booked" };
+			const result = await registerClassesCollection.find(query).toArray();
+			res.send(result);
+		});
+
 		app.post("/register-classes", async (req, res) => {
 			const classInfo = req.body;
 			const result = await registerClassesCollection.insertOne(classInfo);
+			res.send(result);
+		});
+
+		app.delete("/register-classes/:id", async (req, res) => {
+			const id = req.params.id;
+			const query = { _id: new ObjectId(id) };
+			const result = await registerClassesCollection.deleteOne(query);
 			res.send(result);
 		});
 
