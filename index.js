@@ -25,6 +25,7 @@ async function run() {
 		const usersCollection = client.db("multilingualMastery").collection("users");
 		const classesCollection = client.db("multilingualMastery").collection("classes");
 		const registerClassesCollection = client.db("multilingualMastery").collection("registerClasses");
+		const paymentCollection = client.db("multilingualMastery").collection("payments");
 
 		//user apis
 		app.get("/users", async (req, res) => {
@@ -156,7 +157,9 @@ async function run() {
 		//create payment intent
 		app.post("/create-payment-intent", async (req, res) => {
 			const { price } = req.body;
+			// console.log(price);
 			const amount = parseFloat(price) * 100;
+			// console.log(amount);
 			// Create a PaymentIntent with the order amount and currency
 			const paymentIntent = await stripe.paymentIntents.create({
 				amount: amount,
@@ -167,6 +170,13 @@ async function run() {
 			res.send({
 				clientSecret: paymentIntent.client_secret,
 			});
+		});
+
+		app.post("/payments", async (req, res) => {
+			const payment = req.body;
+			const insertResult = await paymentCollection.insertOne(payment);
+
+			res.send(insertResult);
 		});
 
 		await client.db("admin").command({ ping: 1 });
