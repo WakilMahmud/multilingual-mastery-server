@@ -136,11 +136,13 @@ async function run() {
 
 		//registerClasses
 		app.get("/register-classes", async (req, res) => {
-			const query = { status: "booked" };
+			const email = req.query.email;
+			const query = { userEmail: email, status: "booked" };
 			const result = await registerClassesCollection.find(query).toArray();
 			res.send(result);
 		});
 
+		// TODO: Insert One Time
 		app.post("/register-classes", async (req, res) => {
 			const classInfo = req.body;
 			const result = await registerClassesCollection.insertOne(classInfo);
@@ -176,7 +178,29 @@ async function run() {
 			const payment = req.body;
 			const insertResult = await paymentCollection.insertOne(payment);
 
+			//delete specified class from user's selected classes
 			res.send(insertResult);
+		});
+
+		app.patch("/payments", async (req, res) => {
+			const id = req.query.id;
+
+			const filter = {
+				_id: new ObjectId(id),
+			};
+
+			const updateDoc = {
+				$set: {
+					status: "enrolled",
+				},
+				$inc: {
+					availableSeats: -1,
+				},
+			};
+
+			const result = await registerClassesCollection.updateOne(filter, updateDoc);
+
+			res.send(result);
 		});
 
 		await client.db("admin").command({ ping: 1 });
