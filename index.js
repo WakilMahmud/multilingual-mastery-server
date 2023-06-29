@@ -142,6 +142,14 @@ async function run() {
 			res.send(result);
 		});
 
+		//enrolled classes
+		app.get("/enrolled-classes", async (req, res) => {
+			const email = req.query.email;
+			const query = { userEmail: email, status: "enrolled" };
+			const result = await registerClassesCollection.find(query).toArray();
+			res.send(result);
+		});
+
 		// TODO: Insert One Time
 		app.post("/register-classes", async (req, res) => {
 			const classInfo = req.body;
