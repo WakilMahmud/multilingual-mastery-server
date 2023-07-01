@@ -219,6 +219,35 @@ async function run() {
 
 			res.send(popularClasses);
 		});
+		// Retrieve top 6 instructors based on student count
+		app.get("/popular-instructors", async (req, res) => {
+			const popularInstructors = await popularCollection
+				.find()
+				.sort({ enrolledStudentsCount: -1 })
+				.limit(6)
+				.project({ instructorEmail: 1 })
+				.toArray();
+
+			// Extract unique email addresses from instructors
+			const uniquePopularInstructorEmails = [...new Set(popularInstructors.map((instructor) => instructor.instructorEmail))];
+
+			// console.log(uniquePopularInstructorEmails);
+
+			const fetchInstructorData = async () => {
+				let result = [];
+
+				for (const instructorEmail of uniquePopularInstructorEmails) {
+					const query = { email: instructorEmail };
+					const instructor = await usersCollection.findOne(query);
+					// console.log(instructor);
+					result.push(...result, instructor);
+				}
+
+				const uniqueInstructors = [...new Set(result)];
+				res.send(uniqueInstructors);
+			};
+			fetchInstructorData();
+		});
 
 		app.post("/popular-classes", async (req, res) => {
 			const popularClass = req.body;
