@@ -26,6 +26,7 @@ async function run() {
 		const classesCollection = client.db("multilingualMastery").collection("classes");
 		const registerClassesCollection = client.db("multilingualMastery").collection("registerClasses");
 		const paymentCollection = client.db("multilingualMastery").collection("payments");
+		const popularCollection = client.db("multilingualMastery").collection("popular");
 
 		//user apis
 		app.get("/users", async (req, res) => {
@@ -186,7 +187,6 @@ async function run() {
 			const payment = req.body;
 			const insertResult = await paymentCollection.insertOne(payment);
 
-			//delete specified class from user's selected classes
 			res.send(insertResult);
 		});
 
@@ -209,6 +209,41 @@ async function run() {
 			const result = await registerClassesCollection.updateOne(filter, updateDoc);
 
 			res.send(result);
+		});
+
+		//popular-classes
+
+		// Retrieve top 6 classes based on student count
+		app.get("/popular-classes", async (req, res) => {
+			const popularClasses = await popularCollection.find().sort({ enrolledStudents: -1 }).limit(6).toArray();
+
+			res.send(popularClasses);
+		});
+
+		app.post("/popular-classes", async (req, res) => {
+			const popularClass = req.body;
+			const result = await popularCollection.insertOne(popularClass);
+
+			res.send(result);
+		});
+
+		app.patch("/popular-classes", async (req, res) => {
+			const className = req.query.className;
+			const instructorEmail = req.query.instructorEmail;
+
+			const filter = {
+				className,
+				instructorEmail,
+			};
+
+			const updateDoc = {
+				$inc: {
+					enrolledStudents: 1,
+				},
+			};
+
+			const result = await popularCollection.updateOne(filter, updateDoc);
+			return result;
 		});
 
 		await client.db("admin").command({ ping: 1 });
