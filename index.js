@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.PAYMENT_SECTRET_KEY);
 const port = process.env.PORT || 5000;
@@ -20,6 +22,23 @@ const client = new MongoClient(uri, {
 	},
 });
 
+const verifyJWT = (req, res, next) => {
+	const authorization = req.headers.authorization;
+	if (!authorization) {
+		return res.status(401).send({ error: true, message: "unauthorized access" });
+	}
+	// bearer token
+	const token = authorization.split(" ")[1];
+
+	jwt.verify(token, process.env.DB_ACCESS_TOKEN, (err, decoded) => {
+		if (err) {
+			return res.status(401).send({ error: true, message: "unauthorized access" });
+		}
+		req.decoded = decoded;
+		next();
+	});
+};
+
 async function run() {
 	try {
 		const usersCollection = client.db("multilingualMastery").collection("users");
@@ -28,12 +47,26 @@ async function run() {
 		const paymentCollection = client.db("multilingualMastery").collection("payments");
 		const popularCollection = client.db("multilingualMastery").collection("popular");
 
-		//user apis
-		app.get("/users", async (req, res) => {
-			const queryEmail = req.query.email;
-			// console.log(queryEmail);
+		app.post("/jwt", (req, res) => {
+			const user = req.body;
+			const token = jwt.sign(user, process.env.DB_ACCESS_TOKEN, { expiresIn: "1h" });
 
-			if (queryEmail) {
+			res.send({ token });
+		});
+
+		//user apis
+		app.get("/users", verifyJWT, async (req, res) => {
+			const queryEmail = req.query.email;
+			const role = req.query.role;
+			// console.log("QueryEmail --> ", queryEmail);
+
+			const decodedEmail = req.decoded.email;
+			// console.log("DecodedEmail -->", decodedEmail);
+			if (queryEmail !== decodedEmail) {
+				return res.status(403).send({ error: true, message: "Forbidden access" });
+			}
+
+			if (queryEmail && role) {
 				const query = { email: queryEmail };
 				const desiredUser = await usersCollection.findOne(query);
 				return res.send(desiredUser);
