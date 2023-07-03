@@ -55,16 +55,9 @@ async function run() {
 		});
 
 		//user apis
-		app.get("/users", verifyJWT, async (req, res) => {
+		app.get("/users", async (req, res) => {
 			const queryEmail = req.query.email;
 			const role = req.query.role;
-			// console.log("QueryEmail --> ", queryEmail);
-
-			const decodedEmail = req.decoded.email;
-			// console.log("DecodedEmail -->", decodedEmail);
-			if (queryEmail !== decodedEmail) {
-				return res.status(403).send({ error: true, message: "Forbidden access" });
-			}
 
 			if (queryEmail && role) {
 				const query = { email: queryEmail };
@@ -149,6 +142,40 @@ async function run() {
 		app.post("/classes", async (req, res) => {
 			const classInfo = req.body;
 			const result = await classesCollection.insertOne(classInfo);
+			res.send(result);
+		});
+
+		app.patch("/classes", async (req, res) => {
+			const className = req.query.className;
+			const instructorEmail = req.query.instructorEmail;
+
+			const filter = {
+				className,
+				instructorEmail,
+			};
+			const updateDoc = {
+				$inc: {
+					enrolledStudents: 1,
+					availableSeats: -1,
+				},
+			};
+
+			const result = await classesCollection.updateOne(filter, updateDoc);
+			res.send(result);
+		});
+
+		app.patch("/classes/:id", async (req, res) => {
+			const id = req.params.id;
+			const feedback = req.query.feedback;
+
+			const filter = { _id: new ObjectId(id) };
+			const updateDoc = {
+				$set: {
+					feedback: feedback,
+				},
+			};
+
+			const result = await classesCollection.updateOne(filter, updateDoc);
 			res.send(result);
 		});
 
@@ -240,6 +267,17 @@ async function run() {
 			};
 
 			const result = await registerClassesCollection.updateOne(filter, updateDoc);
+
+			res.send(result);
+		});
+
+		app.get("/payment-history", async (req, res) => {
+			const email = req.query.email;
+			// console.log(email);
+
+			const query = { email: email };
+
+			const result = await paymentCollection.find(query).sort({ date: -1 }).toArray();
 
 			res.send(result);
 		});
