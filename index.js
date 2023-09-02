@@ -11,6 +11,8 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
+// console.log(process.env.ACCESS_TOKEN);
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.hgdpfd2.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -24,16 +26,20 @@ const client = new MongoClient(uri, {
 
 const verifyJWT = (req, res, next) => {
 	const authorization = req.headers.authorization;
+	// console.log("Authorization: ", authorization);
 	if (!authorization) {
+		// console.log("unauthorized access 1");
 		return res.status(401).send({ error: true, message: "unauthorized access" });
 	}
 	// bearer token
 	const token = authorization.split(" ")[1];
 
-	jwt.verify(token, process.env.DB_ACCESS_TOKEN, (err, decoded) => {
+	jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
 		if (err) {
+			// console.log("unauthorized access 2");
 			return res.status(401).send({ error: true, message: "unauthorized access" });
 		}
+		// console.log("Decoded = ", decoded);
 		req.decoded = decoded;
 		next();
 	});
@@ -49,22 +55,37 @@ async function run() {
 
 		app.post("/jwt", (req, res) => {
 			const user = req.body;
-			const token = jwt.sign(user, process.env.DB_ACCESS_TOKEN, { expiresIn: "1h" });
-
+			// console.log("User", user);
+			const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: "1h" });
+			// console.log(token);
 			res.send({ token });
 		});
 
-		//user apis
-		app.get("/users", async (req, res) => {
+		const verifyAdmin = async (req, res, next) => {
+			const email = req.decoded.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			if (user?.role !== "admin") {
+				return res.status(403).send({ error: true, message: "forbidden message" });
+			}
+			next();
+		};
+
+		app.get("/userRole", async (req, res) => {
 			const queryEmail = req.query.email;
 			const role = req.query.role;
+
+			// console.log(queryEmail);
 
 			if (queryEmail && role) {
 				const query = { email: queryEmail };
 				const desiredUser = await usersCollection.findOne(query);
 				return res.send(desiredUser);
 			}
+		});
 
+		//user apis
+		app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
 			const result = await usersCollection.find().toArray();
 			res.send(result);
 		});
