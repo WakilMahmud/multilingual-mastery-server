@@ -71,6 +71,26 @@ async function run() {
 			next();
 		};
 
+		const verifyStudent = async (req, res, next) => {
+			const email = req.decoded.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			if (user?.role !== "student") {
+				return res.status(403).send({ error: true, message: "forbidden message" });
+			}
+			next();
+		};
+
+		const verifyInstructor = async (req, res, next) => {
+			const email = req.decoded.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			if (user?.role !== "instructor") {
+				return res.status(403).send({ error: true, message: "forbidden message" });
+			}
+			next();
+		};
+
 		app.get("/userRole", async (req, res) => {
 			const queryEmail = req.query.email;
 			const role = req.query.role;
@@ -138,8 +158,13 @@ async function run() {
 			res.send(result);
 		});
 
+		app.get("/manageClasses", verifyJWT, verifyAdmin, async (req, res) => {
+			const result = await classesCollection.find().toArray();
+			res.send(result);
+		});
+
 		// classes apis
-		app.get("/classes", async (req, res) => {
+		app.get("/classes", verifyJWT, verifyInstructor, async (req, res) => {
 			const email = req.query.email;
 			// console.log(email);
 
@@ -150,8 +175,8 @@ async function run() {
 
 				return res.send(desiredInstructorClasses);
 			}
-			const result = await classesCollection.find().toArray();
-			res.send(result);
+			// const result = await classesCollection.find().toArray();
+			// res.send(result);
 		});
 
 		app.get("/approved-classes", async (req, res) => {
@@ -217,7 +242,7 @@ async function run() {
 		});
 
 		//registerClasses
-		app.get("/register-classes", async (req, res) => {
+		app.get("/register-classes", verifyJWT, verifyStudent, async (req, res) => {
 			const email = req.query.email;
 			const query = { userEmail: email, status: "booked" };
 			const result = await registerClassesCollection.find(query).toArray();
@@ -225,7 +250,7 @@ async function run() {
 		});
 
 		//enrolled classes
-		app.get("/enrolled-classes", async (req, res) => {
+		app.get("/enrolled-classes", verifyJWT, verifyStudent, async (req, res) => {
 			const email = req.query.email;
 			const query = { userEmail: email, status: "enrolled" };
 			const result = await registerClassesCollection.find(query).toArray();
@@ -292,7 +317,7 @@ async function run() {
 			res.send(result);
 		});
 
-		app.get("/payment-history", async (req, res) => {
+		app.get("/payment-history", verifyJWT, verifyStudent, async (req, res) => {
 			const email = req.query.email;
 			// console.log(email);
 
